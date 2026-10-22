@@ -12,6 +12,9 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/pycommerce"
     cors_origins: list[str] = ["http://localhost:3000"]
+    session_ttl_days: int = 7
+    # Send the session cookie over HTTPS only. Keep it off for local http:// development.
+    cookie_secure: bool = False
 
 
 @lru_cache
