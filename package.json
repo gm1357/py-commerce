@@ -13,7 +13,8 @@
     "typecheck": "turbo run typecheck",
     "test": "docker compose up -d --wait && turbo run test",
     "db:migrate": "docker compose up -d --wait && npm run db:migrate -w api",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:seed": "docker compose up -d --wait && npm run db:seed -w api"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

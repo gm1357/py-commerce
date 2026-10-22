@@ -8,6 +8,7 @@
     "typecheck": "uv run mypy src",
     "test": "uv run pytest",
     "db:migrate": "uv run alembic upgrade head",
-    "db:revision": "uv run alembic revision --autogenerate"
+    "db:revision": "uv run alembic revision --autogenerate",
+    "db:seed": "uv run python -m api.scripts.seed_products"
   }
 }
