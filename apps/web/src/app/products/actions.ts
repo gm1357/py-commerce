@@ -10,6 +10,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { getSessionToken } from "@/lib/auth";
 import { parseDollars } from "@/lib/money";
 
 type Field = "name" | "description" | "price";
@@ -44,7 +45,11 @@ function parseForm(formData: FormData): ParsedForm {
 function toFormState(
   values: Record<Field, string>,
   error: HttpValidationError | undefined,
+  response: Response | undefined,
 ): ProductFormState {
+  if (response?.status === 401 || response?.status === 403) {
+    return { values, message: "You must be signed in as an admin to do this." };
+  }
   // FastAPI 422s look like { detail: [{ loc: ["body", "name"], msg: "..." }] }
   const errors: Partial<Record<Field, string>> = {};
   for (const issue of error?.detail ?? []) {
@@ -64,8 +69,11 @@ export async function createProductAction(
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
 
-  const { error } = await productsCreateProduct({ body: parsed.body });
-  if (error) return toFormState(parsed.values, error);
+  const { error, response } = await productsCreateProduct({
+    body: parsed.body,
+    auth: await getSessionToken(),
+  });
+  if (error) return toFormState(parsed.values, error, response);
 
   revalidatePath("/");
   redirect("/");
@@ -80,9 +88,13 @@ export async function updateProductAction(
   if (!parsed.ok) return parsed.state;
 
   const { values, body } = parsed;
-  const { error, response } = await productsUpdateProduct({ path: { product_id: id }, body });
+  const { error, response } = await productsUpdateProduct({
+    path: { product_id: id },
+    body,
+    auth: await getSessionToken(),
+  });
   if (response?.status === 404) return { values, message: "This product no longer exists." };
-  if (error) return toFormState(values, error);
+  if (error) return toFormState(values, error, response);
 
   revalidatePath("/");
   revalidatePath(`/products/${id}`);
@@ -90,7 +102,10 @@ export async function updateProductAction(
 }
 
 export async function deleteProductAction(id: number): Promise<void> {
-  const { error, response } = await productsDeleteProduct({ path: { product_id: id } });
+  const { error, response } = await productsDeleteProduct({
+    path: { product_id: id },
+    auth: await getSessionToken(),
+  });
   // 404 means it's already gone, which is what the user wanted.
   if (error && response?.status !== 404) throw new Error(`Failed to delete product ${id}`);
 

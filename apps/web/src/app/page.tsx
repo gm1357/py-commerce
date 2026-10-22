@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Pagination } from "@/components/pagination";
+import { getCurrentUser } from "@/lib/auth";
 import { formatCents } from "@/lib/money";
 
 export default function Home(props: PageProps<"/">) {
@@ -10,17 +11,28 @@ export default function Home(props: PageProps<"/">) {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">Products</h1>
-        <Link
-          href="/products/new"
-          className="rounded-md bg-zinc-900 px-4 py-2 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          New product
-        </Link>
+        <Suspense>
+          <NewProductLink />
+        </Suspense>
       </div>
       <Suspense fallback={<ProductGridSkeleton />}>
         <ProductList searchParams={props.searchParams} />
       </Suspense>
     </div>
+  );
+}
+
+async function NewProductLink() {
+  const user = await getCurrentUser();
+  if (user?.role !== "admin") return null;
+
+  return (
+    <Link
+      href="/products/new"
+      className="rounded-md bg-zinc-900 px-4 py-2 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+    >
+      New product
+    </Link>
   );
 }
 
