@@ -38,6 +38,10 @@ npm run db:migrate   # starts Postgres if needed, then applies migrations
 
 API docs: http://localhost:8000/docs
 
+## Commit messages
+
+Commits must follow [Conventional Commits](https://www.conventionalcommits.org/), e.g. `feat(api): add products endpoint`. A husky `commit-msg` hook runs [commitlint](https://commitlint.js.org) (`@commitlint/config-conventional`) and rejects anything else. The hook is installed automatically by `npm install` (via the `prepare` script).
+
 ## How the API → frontend type pipeline works
 
 ```
