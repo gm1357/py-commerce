@@ -42,6 +42,18 @@ API docs: http://localhost:8000/docs
 
 Commits must follow [Conventional Commits](https://www.conventionalcommits.org/), e.g. `feat(api): add products endpoint`. A husky `commit-msg` hook runs [commitlint](https://commitlint.js.org) (`@commitlint/config-conventional`) and rejects anything else. The hook is installed automatically by `npm install` (via the `prepare` script).
 
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on pull requests and on pushes to `main`:
+
+| Job | What it checks |
+|---|---|
+| Commit messages | commitlint on every commit in the PR (or the pushed range on `main`) |
+| Lint & typecheck | `turbo run lint typecheck`: Ruff + mypy for the API, ESLint + `tsc` for the web app and api-client |
+| Tests | Applies migrations to a Postgres service container, then `turbo run test` |
+
+The jobs share `.github/actions/setup`, which installs Node (version from `.nvmrc`), uv, and all dependencies from the lockfiles (`npm ci`, `uv sync --locked`). Out-of-date lockfiles fail CI. `package.json` requires npm `^11.13.0` through `devEngines`, and npm refuses to install with a version outside that range.
+
 ## How the API → frontend type pipeline works
 
 ```
