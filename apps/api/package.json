@@ -1,0 +1,13 @@
+{
+  "name": "api",
+  "private": true,
+  "scripts": {
+    "dev": "uv run fastapi dev --port 8000",
+    "openapi": "uv run python -m api.scripts.export_openapi",
+    "lint": "uv run ruff check . && uv run ruff format --check .",
+    "typecheck": "uv run mypy src",
+    "test": "uv run pytest",
+    "db:migrate": "uv run alembic upgrade head",
+    "db:revision": "uv run alembic revision --autogenerate"
+  }
+}

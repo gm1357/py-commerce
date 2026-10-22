@@ -1,0 +1,31 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "api#openapi": {
+      "inputs": ["src/**/*.py", "pyproject.toml"],
+      "outputs": ["openapi.json"]
+    },
+    "generate": {},
+    "api-client#generate": {
+      "dependsOn": ["api#openapi"],
+      "inputs": ["openapi-ts.config.ts", "src/hey-api.ts"],
+      "outputs": ["src/client/**"]
+    },
+    "dev": {
+      "dependsOn": ["^generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": ["^build", "^generate"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["generate", "^generate"]
+    },
+    "lint": {},
+    "test": {
+      "cache": false
+    }
+  }
+}

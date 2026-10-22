@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+.venv/
+
+# build / cache
+.next/
+.turbo/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.tsbuildinfo
+
+# env
+.env
+
+# generated (turbo regenerates these: api#openapi -> api-client#generate)
+apps/api/openapi.json
+packages/api-client/src/client/

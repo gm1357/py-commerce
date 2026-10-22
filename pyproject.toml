@@ -1,0 +1,29 @@
+[project]
+name = "py-commerce"
+version = "0.0.0"
+requires-python = ">=3.13"
+# Depending on every member makes a plain `uv sync` at the root install the whole workspace.
+dependencies = ["api"]
+
+[tool.uv.sources]
+api = { workspace = true }
+
+[tool.uv.workspace]
+members = ["apps/api"]
+
+[dependency-groups]
+dev = ["ruff", "mypy", "pytest", "pytest-asyncio"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
