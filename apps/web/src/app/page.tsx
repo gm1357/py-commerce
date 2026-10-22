@@ -1,53 +1,88 @@
-import { healthGetHealth } from "api-client";
-import { connection } from "next/server";
+import { productsListProducts } from "api-client";
+import Link from "next/link";
 import { Suspense } from "react";
 
-export default function Home() {
+import { Pagination } from "@/components/pagination";
+import { formatCents } from "@/lib/money";
+
+export default function Home(props: PageProps<"/">) {
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-4 py-24">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">py-commerce</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          Next.js frontend talking to the FastAPI backend through the generated api-client.
-        </p>
+    <div className="flex flex-col gap-8">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold tracking-tight">Products</h1>
+        <Link
+          href="/products/new"
+          className="rounded-md bg-zinc-900 px-4 py-2 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+        >
+          New product
+        </Link>
       </div>
-      <Suspense fallback={<StatusList api="checking" database="checking" />}>
-        <SystemStatus />
+      <Suspense fallback={<ProductGridSkeleton />}>
+        <ProductList searchParams={props.searchParams} />
       </Suspense>
-    </main>
+    </div>
   );
 }
 
-async function SystemStatus() {
-  await connection(); // health must be checked per request, never prerendered
-  const status = await fetchStatus();
-  return <StatusList {...status} />;
-}
+async function ProductList({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const pageParam = Number((await searchParams).page);
+  const page = Number.isInteger(pageParam) && pageParam >= 1 ? pageParam : 1;
 
-async function fetchStatus(): Promise<{ api: string; database: string }> {
-  try {
-    const { data, error } = await healthGetHealth();
-    if (error || !data) return { api: "error", database: "unknown" };
-    return { api: data.status, database: data.database };
-  } catch {
-    // fetch throws when the API isn't running at all
-    return { api: "unreachable", database: "unknown" };
+  const { data } = await productsListProducts({ query: { page } });
+  if (!data) return <Notice>Couldn&apos;t load products. Is the API running?</Notice>;
+  if (data.total === 0) return <Notice>No products yet. Create the first one!</Notice>;
+  if (data.items.length === 0) {
+    return (
+      <Notice>
+        Page {page} doesn&apos;t exist.{" "}
+        <Link href="/" className="underline">
+          Go to page 1
+        </Link>
+      </Notice>
+    );
   }
-}
 
-function StatusList({ api, database }: { api: string; database: string }) {
   return (
-    <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 rounded-lg border border-zinc-200 p-4 font-mono text-sm dark:border-zinc-800">
-      <dt className="text-zinc-500">API</dt>
-      <dd className={statusColor(api)}>{api}</dd>
-      <dt className="text-zinc-500">Database</dt>
-      <dd className={statusColor(database)}>{database}</dd>
-    </dl>
+    <div className="flex flex-col gap-6">
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {data.items.map((product) => (
+          <li key={product.id}>
+            <Link
+              href={`/products/${product.id}`}
+              className="flex h-full flex-col gap-2 rounded-lg border border-zinc-200 p-4 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="font-medium">{product.name}</h2>
+                <span className="font-mono text-sm">{formatCents(product.price)}</span>
+              </div>
+              {product.description && (
+                <p className="line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  {product.description}
+                </p>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Pagination page={data.page} pages={data.pages} />
+    </div>
   );
 }
 
-function statusColor(value: string) {
-  if (value === "ok") return "text-green-600 dark:text-green-400";
-  if (value === "checking") return "text-zinc-500";
-  return "text-red-600 dark:text-red-400";
+function Notice({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+      {children}
+    </p>
+  );
+}
+
+function ProductGridSkeleton() {
+  return (
+    <ul className="grid gap-4 sm:grid-cols-2" aria-busy="true" aria-label="Loading products">
+      {Array.from({ length: 10 }, (_, i) => (
+        <li key={i} className="h-24 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-900" />
+      ))}
+    </ul>
+  );
 }
