@@ -52,7 +52,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on pull requests and on pushes 
 | Lint & typecheck | `turbo run lint typecheck`: Ruff + mypy for the API, ESLint + `tsc` for the web app and api-client |
 | Tests | Applies migrations to a Postgres service container, then `turbo run test` |
 
-The jobs share `.github/actions/setup`, which installs Node (version from `.nvmrc`), the exact npm version pinned in `package.json` (`devEngines`), uv, and all dependencies from the lockfiles (`npm ci`, `uv sync --locked`). Out-of-date lockfiles fail CI.
+The jobs share `.github/actions/setup`, which installs Node (version from `.nvmrc`), uv, and all dependencies from the lockfiles (`npm ci`, `uv sync --locked`). Out-of-date lockfiles fail CI. `package.json` requires npm `^11.13.0` through `devEngines`, and npm refuses to install with a version outside that range.
 
 ## How the API → frontend type pipeline works
 

@@ -1,5 +1,5 @@
 name: Set up toolchain
-description: Node + the npm version pinned in package.json, npm ci, and optionally uv + uv sync.
+description: Node, npm ci, and optionally uv + uv sync.
 
 inputs:
   python:
@@ -14,11 +14,7 @@ runs:
         node-version-file: .nvmrc
         cache: npm
 
-    # package.json pins an exact npm in devEngines and npm refuses to install with any other.
-    - name: Install pinned npm
-      shell: bash
-      run: npm install -g "npm@$(node -p 'require("./package.json").devEngines.packageManager.version')"
-
+    # The npm bundled with Node 24 must satisfy devEngines.packageManager in package.json.
     - name: Install JS dependencies
       shell: bash
       run: npm ci
