@@ -3,15 +3,13 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-ProductName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
-
 
 class ProductIn(BaseModel):
     """Editable product fields, used to both create and update a product."""
 
-    name: ProductName
-    description: str | None = Field(default=None, max_length=2000)
-    price: int = Field(ge=0, description="Price in cents")
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    description: Annotated[str | None, Field(max_length=2000)] = None
+    price: Annotated[int, Field(ge=0, description="Price in cents")]
 
 
 class ProductOut(ProductIn):
