@@ -1,11 +1,8 @@
-from httpx import ASGITransport, AsyncClient
-
-from api.main import app
+from httpx import AsyncClient
 
 
-async def test_health_reports_database_ok() -> None:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.get("/health")
+async def test_health_reports_database_ok(client: AsyncClient) -> None:
+    response = await client.get("/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "ok"}
