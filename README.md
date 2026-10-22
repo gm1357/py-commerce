@@ -23,6 +23,7 @@ cp .env.example .env
 npm run setup        # uv sync && npm install
 npm run db:migrate   # starts Postgres if needed, then applies migrations
 npm run db:seed      # optional: insert 50 mock products (each run adds 50 more)
+npm run db:seed:users  # optional: create a default user and an admin (see Auth)
 ```
 
 ## Daily commands
@@ -36,6 +37,7 @@ npm run db:seed      # optional: insert 50 mock products (each run adds 50 more)
 | Create a migration (autogenerate from models) | `npm run db:revision -w api -- -m "add products"` |
 | Apply migrations | `npm run db:migrate` |
 | Insert 50 mock products | `npm run db:seed` |
+| Create the default user and admin | `npm run db:seed:users` |
 | Regenerate the TS client by hand | `npx turbo run generate` |
 
 API docs: http://localhost:8000/docs
@@ -46,12 +48,40 @@ API docs: http://localhost:8000/docs
 |---|---|---|
 | `GET` | `/products?page=1&page_size=10` | Newest first. Returns `{ items, total, page, page_size, pages }` |
 | `GET` | `/products/{id}` | 404 if missing or deleted |
-| `POST` | `/products` | Body: `{ name, description, price }`. Returns 201 |
-| `PUT` | `/products/{id}` | Same body as create; replaces the editable fields |
-| `DELETE` | `/products/{id}` | Soft delete: sets `deleted_at`. Returns 204 |
+| `POST` | `/products` | **Admin only.** Body: `{ name, description, price }`. Returns 201 |
+| `PUT` | `/products/{id}` | **Admin only.** Same body as create; replaces the editable fields |
+| `DELETE` | `/products/{id}` | **Admin only.** Soft delete: sets `deleted_at`. Returns 204 |
 
 - **Prices are integers in cents** (`1299` = $12.99). The web app takes and shows USD and converts at the edge (`apps/web/src/lib/money.ts`).
 - Soft-deleted products stay in the table but are hidden from every endpoint.
+- Anyone can read products, even when signed out. Admin-only endpoints return 401 when signed out and 403 for non-admins.
+
+## Auth
+
+Auth uses server-side sessions, not JWTs. Signing in creates a row in the `sessions` table, and its random token goes back in an `HttpOnly`, `SameSite=lax` cookie named `session_id`. Every request looks that token up. Signing out deletes the row, so the session ends right away. Sessions expire after `SESSION_TTL_DAYS` (default 7). Passwords are hashed with argon2 ([pwdlib](https://github.com/frankie567/pwdlib)).
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/auth/signup` | Body: `{ name, email, password }` (password 8–128 chars). Creates a `user` and signs in. 409 if the email is taken |
+| `POST` | `/auth/login` | Body: `{ email, password }`. Sets the cookie. 401 on bad credentials |
+| `POST` | `/auth/logout` | Deletes the session and clears the cookie. Returns 204 |
+| `GET` | `/auth/me` | The signed-in user, or 401 |
+
+- **Roles:** `user` (the default) and `admin`. Signup always creates a `user`. To make someone an admin, change it in the database:
+  ```bash
+  docker compose exec postgres psql -U postgres -d pycommerce \
+    -c "UPDATE users SET role = 'admin' WHERE email = 'someone@example.com';"
+  ```
+- **Seed accounts** (`npm run db:seed:users`, safe to re-run, for development only):
+
+  | Email | Password | Role |
+  |---|---|---|
+  | `user@example.com` | `password123` | user |
+  | `admin@example.com` | `admin12345` | admin |
+
+- **In the API code:** add `CurrentUserDep` (any signed-in user) or `AdminDep` / `Depends(require_admin)` to a route (`apps/api/src/api/core/auth.py`).
+- **In Swagger** (`/docs`): call `POST /auth/login`. The browser stores the cookie and sends it on later requests.
+- **In the web app:** pages and server actions call the API from the Next server, so the browser never talks to the API directly. On signup and signin, the server action copies the API's `session_id` cookie onto the browser (`saveSessionCookie` in `apps/web/src/lib/auth.ts`). Later calls pass the token back with the generated client's `auth` option, which sends it only to endpoints that declare the cookie scheme. The UI hides New/Edit/Delete from non-admins, but the API is what enforces the rule.
 
 ## Tests
 
