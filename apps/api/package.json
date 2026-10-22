@@ -9,6 +9,7 @@
     "test": "uv run pytest",
     "db:migrate": "uv run alembic upgrade head",
     "db:revision": "uv run alembic revision --autogenerate",
-    "db:seed": "uv run python -m api.scripts.seed_products"
+    "db:seed": "uv run python -m api.scripts.seed_products",
+    "db:seed:users": "uv run python -m api.scripts.seed_users"
   }
 }
