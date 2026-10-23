@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { DeleteProductButton } from "@/components/delete-product-button";
+import { getCurrentUser } from "@/lib/auth";
 import { formatDate } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { getProductOrNotFound } from "@/lib/products";
@@ -22,7 +23,8 @@ export default function ProductPage(props: PageProps<"/products/[id]">) {
 }
 
 async function ProductDetails({ params }: { params: PageProps<"/products/[id]">["params"] }) {
-  const product = await getProductOrNotFound((await params).id);
+  const { id } = await params;
+  const [product, user] = await Promise.all([getProductOrNotFound(id), getCurrentUser()]);
 
   return (
     <article className="flex flex-col gap-6">
@@ -39,15 +41,17 @@ async function ProductDetails({ params }: { params: PageProps<"/products/[id]">[
         <dt>Updated</dt>
         <dd>{formatDate(product.updated_at)}</dd>
       </dl>
-      <div className="flex items-center gap-3">
-        <Link
-          href={`/products/${product.id}/edit`}
-          className="rounded-md bg-zinc-900 px-4 py-2 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          Edit
-        </Link>
-        <DeleteProductButton action={deleteProductAction.bind(null, product.id)} />
-      </div>
+      {user?.role === "admin" && (
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/products/${product.id}/edit`}
+            className="rounded-md bg-zinc-900 px-4 py-2 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            Edit
+          </Link>
+          <DeleteProductButton action={deleteProductAction.bind(null, product.id)} />
+        </div>
+      )}
     </article>
   );
 }

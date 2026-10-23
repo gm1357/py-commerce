@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { ProductForm } from "@/components/product-form";
 import { centsToDollarInput } from "@/lib/money";
+import { requireAdmin } from "@/lib/auth";
 import { getProductOrNotFound } from "@/lib/products";
 
 import { updateProductAction } from "../../actions";
@@ -18,6 +19,7 @@ export default function EditProductPage(props: PageProps<"/products/[id]/edit">)
 }
 
 async function EditProductForm({ params }: { params: PageProps<"/products/[id]/edit">["params"] }) {
+  await requireAdmin();
   const product = await getProductOrNotFound((await params).id);
 
   return (

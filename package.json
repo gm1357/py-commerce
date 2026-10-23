@@ -14,7 +14,8 @@
     "test": "docker compose up -d --wait && turbo run test",
     "db:migrate": "docker compose up -d --wait && npm run db:migrate -w api",
     "prepare": "husky",
-    "db:seed": "docker compose up -d --wait && npm run db:seed -w api"
+    "db:seed": "docker compose up -d --wait && npm run db:seed -w api",
+    "db:seed:users": "docker compose up -d --wait && npm run db:seed:users -w api"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

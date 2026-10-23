@@ -3,12 +3,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from api.core.auth import require_admin
 from api.db.session import SessionDep
 from api.models import Product
 from api.schemas.product import ProductIn, ProductOut, ProductPage
 from api.services import products as product_service
 
 router = APIRouter(prefix="/products", tags=["products"])
+
+# Anyone can browse products; only admins can change them.
+admin_only = [Depends(require_admin)]
 
 
 async def get_product_or_404(product_id: int, session: SessionDep) -> Product:
@@ -42,16 +46,18 @@ async def get_product(product: ProductDep) -> Product:
     return product
 
 
-@router.post("", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=ProductOut, status_code=status.HTTP_201_CREATED, dependencies=admin_only
+)
 async def create_product(data: ProductIn, session: SessionDep) -> Product:
     return await product_service.create_product(session, data)
 
 
-@router.put("/{product_id}", response_model=ProductOut)
+@router.put("/{product_id}", response_model=ProductOut, dependencies=admin_only)
 async def update_product(product: ProductDep, data: ProductIn, session: SessionDep) -> Product:
     return await product_service.update_product(session, product, data)
 
 
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=admin_only)
 async def delete_product(product: ProductDep, session: SessionDep) -> None:
     await product_service.soft_delete_product(session, product)

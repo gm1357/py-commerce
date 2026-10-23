@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 
 from api.core.config import get_settings
-from api.routers import health, products
+from api.routers import auth, health, products
 
 
 def generate_operation_id(route: APIRoute) -> str:
@@ -22,4 +22,5 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(products.router)
