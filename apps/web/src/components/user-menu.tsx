@@ -25,6 +25,15 @@ export async function UserMenu() {
 
   return (
     <div className="flex items-center gap-3 text-sm">
+      <Link href="/cart" className="hover:underline">
+        Cart
+      </Link>
+      <Link href="/orders" className="hover:underline">
+        Orders
+      </Link>
+      <span className="text-zinc-400 dark:text-zinc-600" aria-hidden>
+        |
+      </span>
       <span>{user.name}</span>
       {user.role === "admin" && (
         <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">

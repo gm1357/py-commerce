@@ -19,10 +19,16 @@ export const getCurrentUser = cache(async (): Promise<UserOut | null> => {
   return data ?? null;
 });
 
-/** For admin-only pages. The API enforces the same rule; this just avoids showing a dead end. */
-export async function requireAdmin(): Promise<UserOut> {
+/** For pages that need a signed-in user, like the cart. */
+export async function requireUser(): Promise<UserOut> {
   const user = await getCurrentUser();
   if (!user) redirect("/signin");
+  return user;
+}
+
+/** For admin-only pages. The API enforces the same rule; this just avoids showing a dead end. */
+export async function requireAdmin(): Promise<UserOut> {
+  const user = await requireUser();
   if (user.role !== "admin") redirect("/");
   return user;
 }

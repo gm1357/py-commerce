@@ -2,10 +2,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { DeleteProductButton } from "@/components/delete-product-button";
+import { QuantityForm } from "@/components/quantity-form";
 import { getCurrentUser } from "@/lib/auth";
 import { formatDate } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { getProductOrNotFound } from "@/lib/products";
+
+import { addToCartAction } from "@/app/cart/actions";
 
 import { deleteProductAction } from "../actions";
 
@@ -33,6 +36,21 @@ async function ProductDetails({ params }: { params: PageProps<"/products/[id]">[
         <p className="font-mono text-xl">{formatCents(product.price)}</p>
         <StockLabel stock={product.stock} />
       </div>
+      {user && product.stock > 0 && (
+        <QuantityForm
+          action={addToCartAction.bind(null, product.id)}
+          defaultQuantity={1}
+          submitLabel="Add to cart"
+        />
+      )}
+      {!user && (
+        <p className="text-sm">
+          <Link href="/signin" className="underline">
+            Sign in
+          </Link>{" "}
+          to buy.
+        </p>
+      )}
       <p className="whitespace-pre-line text-zinc-700 dark:text-zinc-300">
         {product.description || <span className="italic text-zinc-500">No description.</span>}
       </p>
