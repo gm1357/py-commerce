@@ -15,5 +15,16 @@ services:
       timeout: 5s
       retries: 15
 
+  pgweb:
+    image: sosedoff/pgweb:0.17.0
+    profiles: ["tools"]
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres:5432/pycommerce?sslmode=disable
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
