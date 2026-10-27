@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -6,6 +8,10 @@ from fastapi.routing import APIRoute
 from api.core.config import get_settings
 from api.core.errors import DomainError
 from api.routers import auth, cart, health, orders, products
+
+# Uvicorn only configures its own loggers; without this, the app's INFO logs (e.g. order
+# confirmations from api.services.notifications) are dropped.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
 
 
 def generate_operation_id(route: APIRoute) -> str:
