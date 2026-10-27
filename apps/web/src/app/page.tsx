@@ -2,6 +2,7 @@ import { productsListProducts } from "api-client";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { Notice } from "@/components/notice";
 import { Pagination } from "@/components/pagination";
 import { getCurrentUser } from "@/lib/auth";
 import { formatCents } from "@/lib/money";
@@ -67,6 +68,9 @@ async function ProductList({ searchParams }: { searchParams: PageProps<"/">["sea
                 <h2 className="font-medium">{product.name}</h2>
                 <span className="font-mono text-sm">{formatCents(product.price)}</span>
               </div>
+              {product.stock === 0 && (
+                <span className="text-xs font-medium text-red-600 dark:text-red-400">Out of stock</span>
+              )}
               {product.description && (
                 <p className="line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
                   {product.description}
@@ -78,14 +82,6 @@ async function ProductList({ searchParams }: { searchParams: PageProps<"/">["sea
       </ul>
       <Pagination page={data.page} pages={data.pages} />
     </div>
-  );
-}
-
-function Notice({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-      {children}
-    </p>
   );
 }
 

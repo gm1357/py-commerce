@@ -29,6 +29,7 @@ async function EditProductForm({ params }: { params: PageProps<"/products/[id]/e
         name: product.name,
         description: product.description ?? "",
         price: centsToDollarInput(product.price),
+        stock: String(product.stock),
       }}
       submitLabel="Save changes"
       cancelHref={`/products/${product.id}`}

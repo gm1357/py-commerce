@@ -6,7 +6,7 @@ import { useActionState } from "react";
 import type { ProductFormState } from "@/app/products/actions";
 import { Field, inputClass } from "@/components/field";
 
-type Values = { name: string; description: string; price: string };
+type Values = { name: string; description: string; price: string; stock: string };
 
 type Props = {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
@@ -56,6 +56,20 @@ export function ProductForm({ action, initialValues, submitLabel, cancelHref }: 
           placeholder="12.99"
           defaultValue={values?.price}
           aria-invalid={!!errors.price}
+          className={inputClass}
+        />
+      </Field>
+
+      <Field label="Stock" htmlFor="stock" error={errors.stock}>
+        <input
+          id="stock"
+          name="stock"
+          type="number"
+          required
+          min={0}
+          step={1}
+          defaultValue={values?.stock ?? "0"}
+          aria-invalid={!!errors.stock}
           className={inputClass}
         />
       </Field>

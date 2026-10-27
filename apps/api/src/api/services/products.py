@@ -7,16 +7,16 @@ from api.models import Product
 from api.schemas.product import ProductIn
 
 # Soft-deleted products are invisible everywhere.
-_active = Product.deleted_at.is_(None)
+ACTIVE = Product.deleted_at.is_(None)
 
 
 async def list_products(
     session: AsyncSession, page: int, page_size: int
 ) -> tuple[list[Product], int]:
-    total = await session.scalar(select(func.count()).select_from(Product).where(_active)) or 0
+    total = await session.scalar(select(func.count()).select_from(Product).where(ACTIVE)) or 0
     result = await session.scalars(
         select(Product)
-        .where(_active)
+        .where(ACTIVE)
         # Newest first; id breaks ties between rows inserted in the same transaction.
         .order_by(Product.created_at.desc(), Product.id.desc())
         .offset((page - 1) * page_size)
@@ -26,7 +26,7 @@ async def list_products(
 
 
 async def get_product(session: AsyncSession, product_id: int) -> Product | None:
-    return await session.scalar(select(Product).where(Product.id == product_id, _active))
+    return await session.scalar(select(Product).where(Product.id == product_id, ACTIVE))
 
 
 async def create_product(session: AsyncSession, data: ProductIn) -> Product:

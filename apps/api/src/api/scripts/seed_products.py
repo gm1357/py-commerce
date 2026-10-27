@@ -23,6 +23,7 @@ def build_products(count: int, rng: random.Random) -> list[Product]:
                 description=f"A {adjective.lower()} {noun.lower()} made of quality "
                 f"{material.lower()}. Built to last and easy to love.",
                 price=rng.randint(199, 49_999),
+                stock=rng.randint(0, 50),
             )
         )
     return products

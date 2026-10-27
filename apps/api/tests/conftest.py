@@ -5,6 +5,7 @@ only release savepoints inside the outer transaction, which is rolled back after
 """
 
 from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any, Protocol
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -16,7 +17,7 @@ from api.core.config import get_settings
 from api.db.base import Base
 from api.db.session import get_session
 from api.main import app
-from api.models import Role, User
+from api.models import Product, Role, User
 from api.schemas.user import SignupIn
 from api.services import auth as auth_service
 
@@ -71,15 +72,20 @@ async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
     app.dependency_overrides.clear()
 
 
-LoginAs = Callable[[Role], Awaitable[User]]
+class LoginAs(Protocol):
+    def __call__(self, role: Role, email: str | None = None) -> Awaitable[User]: ...
 
 
 @pytest.fixture
 def login_as(client: AsyncClient, session: AsyncSession) -> LoginAs:
-    """Create a user with the given role and sign `client` in as them."""
+    """Create a user with the given role and sign `client` in as them.
 
-    async def login_as(role: Role) -> User:
-        data = SignupIn(name=f"Test {role}", email=f"{role}@example.com", password="password123")
+    Pass `email` to make more than one user with the same role (e.g. a second customer).
+    """
+
+    async def login_as(role: Role, email: str | None = None) -> User:
+        email = email or f"{role}@example.com"
+        data = SignupIn(name=f"Test {role}", email=email, password="password123")
         user = await auth_service.create_user(session, data, role=role)
         user_session = await auth_service.create_session(session, user)
         client.cookies.set(SESSION_COOKIE, user_session.id)
@@ -92,3 +98,19 @@ def login_as(client: AsyncClient, session: AsyncSession) -> LoginAs:
 async def admin_client(client: AsyncClient, login_as: LoginAs) -> AsyncClient:
     await login_as(Role.ADMIN)
     return client
+
+
+MakeProduct = Callable[..., Awaitable[Product]]
+
+
+@pytest.fixture
+def make_product(session: AsyncSession) -> MakeProduct:
+    """Insert a product straight into the database (no admin sign-in needed)."""
+
+    async def make_product(**overrides: Any) -> Product:
+        product = Product(**{"name": "Steel Chair", "price": 1299, "stock": 10, **overrides})
+        session.add(product)
+        await session.commit()
+        return product
+
+    return make_product

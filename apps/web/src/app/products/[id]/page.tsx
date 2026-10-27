@@ -2,10 +2,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { DeleteProductButton } from "@/components/delete-product-button";
+import { QuantityForm } from "@/components/quantity-form";
 import { getCurrentUser } from "@/lib/auth";
 import { formatDate } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { getProductOrNotFound } from "@/lib/products";
+
+import { addToCartAction } from "@/app/cart/actions";
 
 import { deleteProductAction } from "../actions";
 
@@ -31,7 +34,23 @@ async function ProductDetails({ params }: { params: PageProps<"/products/[id]">[
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">{product.name}</h1>
         <p className="font-mono text-xl">{formatCents(product.price)}</p>
+        <StockLabel stock={product.stock} />
       </div>
+      {user && product.stock > 0 && (
+        <QuantityForm
+          action={addToCartAction.bind(null, product.id)}
+          defaultQuantity={1}
+          submitLabel="Add to cart"
+        />
+      )}
+      {!user && (
+        <p className="text-sm">
+          <Link href="/signin" className="underline">
+            Sign in
+          </Link>{" "}
+          to buy.
+        </p>
+      )}
       <p className="whitespace-pre-line text-zinc-700 dark:text-zinc-300">
         {product.description || <span className="italic text-zinc-500">No description.</span>}
       </p>
@@ -54,4 +73,9 @@ async function ProductDetails({ params }: { params: PageProps<"/products/[id]">[
       )}
     </article>
   );
+}
+
+function StockLabel({ stock }: { stock: number }) {
+  if (stock === 0) return <p className="text-sm font-medium text-red-600 dark:text-red-400">Out of stock</p>;
+  return <p className="text-sm text-zinc-600 dark:text-zinc-400">{stock} in stock</p>;
 }
