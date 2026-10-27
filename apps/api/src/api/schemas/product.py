@@ -10,6 +10,7 @@ class ProductIn(BaseModel):
     name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
     description: Annotated[str | None, Field(max_length=2000)] = None
     price: Annotated[int, Field(ge=0, description="Price in cents")]
+    stock: Annotated[int, Field(ge=0, description="Units available to buy")]
 
 
 class ProductOut(ProductIn):

@@ -6,7 +6,7 @@ from httpx import AsyncClient
 
 from api.models import Role
 
-PRODUCT = {"name": "Steel Chair", "description": "Sturdy.", "price": 1299}
+PRODUCT = {"name": "Steel Chair", "description": "Sturdy.", "price": 1299, "stock": 5}
 
 
 async def create(client: AsyncClient, **overrides: Any) -> dict[str, Any]:
@@ -22,6 +22,7 @@ async def test_create_product(admin_client: AsyncClient) -> None:
     assert product["name"] == "Steel Chair"  # whitespace stripped
     assert product["description"] == "Sturdy."
     assert product["price"] == 1299
+    assert product["stock"] == 5
     assert {"id", "created_at", "updated_at"} <= product.keys()
     assert "deleted_at" not in product
 
@@ -34,7 +35,15 @@ async def test_create_product_without_description(admin_client: AsyncClient) -> 
 
 @pytest.mark.parametrize(
     "overrides",
-    [{"price": -1}, {"name": ""}, {"name": "   "}, {"name": "x" * 201}, {"price": 9.99}],
+    [
+        {"price": -1},
+        {"stock": -1},
+        {"stock": None},
+        {"name": ""},
+        {"name": "   "},
+        {"name": "x" * 201},
+        {"price": 9.99},
+    ],
 )
 async def test_create_product_rejects_invalid_input(
     admin_client: AsyncClient, overrides: dict[str, Any]
@@ -87,7 +96,7 @@ async def test_list_products_rejects_invalid_pagination(
 
 async def test_update_product(admin_client: AsyncClient) -> None:
     product = await create(admin_client)
-    changes = {"name": "Oak Table", "description": None, "price": 4500}
+    changes = {"name": "Oak Table", "description": None, "price": 4500, "stock": 0}
 
     response = await admin_client.put(f"/products/{product['id']}", json=changes)
 
