@@ -22,7 +22,7 @@ A simple e-commerce system for learning FastAPI and monorepo management.
 cp .env.example .env
 npm run setup        # uv sync && npm install
 npm run db:migrate   # starts Postgres if needed, then applies migrations
-npm run db:seed      # optional: insert 50 mock products (each run adds 50 more)
+npm run db:seed      # optional: insert 50 mock products with random stock (each run adds 50 more)
 npm run db:seed:users  # optional: create a default user and an admin (see Auth)
 ```
 
@@ -49,7 +49,7 @@ API docs: http://localhost:8000/docs
 |---|---|---|
 | `GET` | `/products?page=1&page_size=10` | Newest first. Returns `{ items, total, page, page_size, pages }` |
 | `GET` | `/products/{id}` | 404 if missing or deleted |
-| `POST` | `/products` | **Admin only.** Body: `{ name, description, price }`. Returns 201 |
+| `POST` | `/products` | **Admin only.** Body: `{ name, description, price, stock }`. Returns 201 |
 | `PUT` | `/products/{id}` | **Admin only.** Same body as create; replaces the editable fields |
 | `DELETE` | `/products/{id}` | **Admin only.** Soft delete: sets `deleted_at`. Returns 204 |
 
@@ -83,6 +83,38 @@ Auth uses server-side sessions, not JWTs. Signing in creates a row in the `sessi
 - **In the API code:** add `CurrentUserDep` (any signed-in user) or `AdminDep` / `Depends(require_admin)` to a route (`apps/api/src/api/core/auth.py`).
 - **In Swagger** (`/docs`): call `POST /auth/login`. The browser stores the cookie and sends it on later requests.
 - **In the web app:** pages and server actions call the API from the Next server, so the browser never talks to the API directly. On signup and signin, the server action copies the API's `session_id` cookie onto the browser (`saveSessionCookie` in `apps/web/src/lib/auth.ts`). Later calls pass the token back with the generated client's `auth` option, which sends it only to endpoints that declare the cookie scheme. The UI hides New/Edit/Delete from non-admins, but the API is what enforces the rule.
+
+## Cart API
+
+Every cart endpoint needs a signed-in user (401 otherwise) and works on that user's own cart.
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/cart` | `{ items: [{ product, quantity, subtotal }], total }` |
+| `PUT` | `/cart/items/{product_id}` | Body: `{ quantity }` (1–99). **Sets** the quantity rather than adding to it, so repeating the request is harmless. 404 if the product doesn't exist, 409 if there isn't enough stock |
+| `DELETE` | `/cart/items/{product_id}` | Returns 204, even if the product wasn't in the cart |
+
+## Orders API
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| `POST` | `/orders/checkout` | signed in | Turns the cart into a `pending` order and empties the cart. Returns 201. 409 if the cart is empty or something is out of stock |
+| `GET` | `/orders?page=1&page_size=10&status=` | signed in | Newest first. Your own orders, or **every** order for admins. `status` is optional |
+| `GET` | `/orders/{id}` | owner or admin | Someone else's order returns **404**, not 403, so order ids don't leak |
+| `POST` | `/orders/{id}/cancel` | owner or admin | Cancels a `pending` or `paid` order and puts its stock back. 409 otherwise |
+| `PATCH` | `/orders/{id}` | **admin** | Body: `{ status }`. Moves the order along the status flow below. 409 for a move that isn't allowed |
+
+```
+pending ──▶ paid ──▶ shipped
+   │          │
+   └──────────┴──▶ cancelled   (stock is restored)
+```
+
+- **Stock** is checked when you add to the cart, but nothing is reserved there. Checkout checks again inside one transaction that locks the product rows (`SELECT … FOR UPDATE`), so two people can't both buy the last unit. If any line fails, nothing changes.
+- **Order items keep the product name and price from checkout.** Editing or deleting a product later doesn't change past orders.
+- Soft-deleted products disappear from carts and are skipped at checkout.
+- Business-rule errors come back as `{ "detail": "..." }` with status 409, the same shape as other FastAPI errors. Services raise `DomainError` subclasses (`apps/api/src/api/core/errors.py`), and one exception handler in `main.py` turns them into responses.
+- Checkout logs an order confirmation from a background task (`apps/api/src/api/services/notifications.py`), standing in for an email.
 
 ## Tests
 
