@@ -43,10 +43,11 @@ export async function updateCartItemAction(
 }
 
 export async function removeCartItemAction(productId: number): Promise<void> {
-  const { error } = await cartRemoveCartItem({
+  const { error, response } = await cartRemoveCartItem({
     path: { product_id: productId },
     auth: await getSessionToken(),
   });
+  if (response?.status === 401) redirect("/signin");
   if (error) throw new Error(`Failed to remove product ${productId} from the cart`);
   revalidatePath("/cart");
 }
