@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 import { getSessionToken } from "@/lib/auth";
 import { parseDollars } from "@/lib/money";
 
-type Field = "name" | "description" | "price";
+type Field = "name" | "description" | "price" | "stock";
 
 export type ProductFormState = {
   errors?: Partial<Record<Field, string>>;
@@ -32,13 +32,22 @@ function parseForm(formData: FormData): ParsedForm {
     name: String(formData.get("name") ?? ""),
     description: String(formData.get("description") ?? ""),
     price: String(formData.get("price") ?? ""),
+    stock: String(formData.get("stock") ?? ""),
   };
   const price = parseDollars(values.price);
   if (price === null) {
     const errors = { price: "Enter a price like 12.99 (up to 2 decimals)." };
     return { ok: false, state: { values, errors } };
   }
-  const body = { name: values.name, description: values.description.trim() || null, price };
+  if (!/^\d+$/.test(values.stock.trim())) {
+    return { ok: false, state: { values, errors: { stock: "Enter a whole number, 0 or more." } } };
+  }
+  const body = {
+    name: values.name,
+    description: values.description.trim() || null,
+    price,
+    stock: Number(values.stock),
+  };
   return { ok: true, values, body };
 }
 
@@ -54,7 +63,7 @@ function toFormState(
   const errors: Partial<Record<Field, string>> = {};
   for (const issue of error?.detail ?? []) {
     const field = issue.loc.at(-1);
-    if (field === "name" || field === "description" || field === "price") {
+    if (field === "name" || field === "description" || field === "price" || field === "stock") {
       errors[field] = issue.msg;
     }
   }
