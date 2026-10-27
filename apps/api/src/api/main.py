@@ -5,7 +5,7 @@ from fastapi.routing import APIRoute
 
 from api.core.config import get_settings
 from api.core.errors import DomainError
-from api.routers import auth, cart, health, products
+from api.routers import auth, cart, health, orders, products
 
 
 def generate_operation_id(route: APIRoute) -> str:
@@ -33,3 +33,4 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(products.router)
 app.include_router(cart.router)
+app.include_router(orders.router)
