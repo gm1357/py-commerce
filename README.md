@@ -39,7 +39,7 @@ npm run db:seed:users  # optional: create a default user and an admin (see Auth)
 | Insert 50 mock products | `npm run db:seed` |
 | Create the default user and admin | `npm run db:seed:users` |
 | Regenerate the TS client by hand | `npx turbo run generate` |
-| Browse the database (pgweb on :8081) | `docker compose --profile tools up -d pgweb` |
+| Browse the database (pgweb on http://localhost:8081) | `npm run db:view` |
 
 API docs: http://localhost:8000/docs
 
