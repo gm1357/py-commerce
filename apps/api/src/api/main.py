@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
 from api.core.config import get_settings
-from api.routers import auth, health, products
+from api.core.errors import DomainError
+from api.routers import auth, cart, health, products
 
 
 def generate_operation_id(route: APIRoute) -> str:
@@ -21,6 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(DomainError)
+async def domain_error_handler(_request: Request, exc: DomainError) -> JSONResponse:
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+
+
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(products.router)
+app.include_router(cart.router)
