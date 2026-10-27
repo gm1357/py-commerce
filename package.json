@@ -15,7 +15,8 @@
     "db:migrate": "docker compose up -d --wait && npm run db:migrate -w api",
     "prepare": "husky",
     "db:seed": "docker compose up -d --wait && npm run db:seed -w api",
-    "db:seed:users": "docker compose up -d --wait && npm run db:seed:users -w api"
+    "db:seed:users": "docker compose up -d --wait && npm run db:seed:users -w api",
+    "db:view": "docker compose --profile tools up -d --wait pgweb"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
